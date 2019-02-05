@@ -15,7 +15,7 @@ Save the inx and py file into your local extensions directory for Inkscape (the 
 ## Usage
 After restarting Inkscape, it can be run via Extensions > Render > Jigsaw Puzzle Generator...
 
-![Options dialog](/images/options.png?raw=true)
+![Options dialog](/images/Options.png?raw=true)
 
 Quick descriptions of the options:
 - Seed: if not 0, used as the seed of the random number generator so a puzzle with the same settings should result in the same design.  Hopefully this won't break with future updates.
