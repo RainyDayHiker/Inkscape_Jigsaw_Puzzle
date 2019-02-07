@@ -15,6 +15,11 @@ def addPath(parent, style, name, data):
             'd':data}
     inkex.etree.SubElement(parent, inkex.addNS('path','svg'), line_attribs )
 
+class Intersection:
+    def __init__(self, row, column):
+        self.row = row
+        self.column = column
+    
 class JigsawPuzzle(inkex.Effect):
     def __init__(self):
         inkex.Effect.__init__(self)
@@ -60,48 +65,74 @@ class JigsawPuzzle(inkex.Effect):
         if self.options.random_seed > 0:
             random.seed(self.options.random_seed)
 
+        # Generate some values to use in initial setup
+        # Note: routine will call this regularly even if no random values are needed.  This ensures that when more options are added
+        #   that require random values, we won't add new calls and breaks seed values resulting in the same puzzle.  Still likely to
+        #   break seeds sometimes but this should hopefully minimize that
+        self.generateRandomValues()
+
         columnWidth = float(self.options.puzzle_width) / float(self.options.tiles_width)
         rowWidth = float(self.options.puzzle_height) / float(self.options.tiles_height)
 
-        # Horizontal Lines
+        # Build array of intersection points
+        intersections = list()
+        for row in range(0, self.options.tiles_height + 1):
+            intersections.append(list())
+            for column in range(0, self.options.tiles_width + 1):
+                self.generateRandomValues()
+                intersections[row].append(Intersection(row * rowWidth, column * columnWidth))
+
+        # Horizontal Lines - go through each row and make connections between the column points
         for row in range(1, self.options.tiles_height):
             self.generateRandomValues()
-            rowOffset = row * rowWidth
-            columnStart = 0
+            # Paths should alternate which side they start on, set up the column range appropriately
+            columnRange = range(0, self.options.tiles_width)
+            nextColumnDirection = 1
             if (row % 2) == 0:
-                columnStart = self.options.puzzle_width
+                columnRange = range(self.options.tiles_width, 0, -1)
+                nextColumnDirection = -1
 
-            pathData = "M" + str(columnStart) + "," + str(rowOffset) + " "
-            for column in range(0, self.options.tiles_width):
+            firstColumn = True
+            for column in columnRange:
                 self.generateRandomValues()
-                columnOffset = column * columnWidth
-                pathData += self.pathDataForLineWithOneTab(column == 0, 
-                    abs(columnStart - columnOffset), rowOffset, 
-                    abs(columnStart - (columnOffset + columnWidth)), rowOffset)
+                if firstColumn:
+                    pathData = "M" + str(intersections[row][column].column) + "," + str(intersections[row][column].row) + " "
+
+                pathData += self.pathDataForLineWithOneTab(firstColumn, 
+                    intersections[row][column], # Starting point 
+                    intersections[row][column + nextColumnDirection]) # Ending point
+
+                firstColumn = False
     
             addPath(rows_group, horizontal_style, 'row'+str(row), pathData)
 
-        # Vertical Lines
+        # Vertical Lines - go through each column and make connections between the row points
         for column in range(1, self.options.tiles_width):
             self.generateRandomValues()
-            columnOffset = column * columnWidth
-            rowStart = 0
-            if (column % 2) == 0:
-                rowStart = self.options.puzzle_height
-            
-            pathData = "M" + str(columnOffset) + "," + str(rowStart) + " "
-            for row in range(0, self.options.tiles_height):
+            # Paths should alternate which side they start on, set up the row range appropriately
+            rowRange = range(0, self.options.tiles_height)
+            nextRowDirection = 1
+            if (row % 2) == 0:
+                rowRange = range(self.options.tiles_height, 0, -1)
+                nextRowDirection = -1
+
+            firstRow = True
+            for row in rowRange:
                 self.generateRandomValues()
-                rowOffset = row * rowWidth
-                pathData += self.pathDataForLineWithOneTab(row == 0, 
-                    columnOffset, abs(rowStart - rowOffset), 
-                    columnOffset, abs(rowStart - (rowOffset + rowWidth)))
-    
+                if firstRow:
+                    pathData = "M" + str(intersections[row][column].column) + "," + str(intersections[row][column].row) + " "
+
+                pathData += self.pathDataForLineWithOneTab(firstRow, 
+                    intersections[row][column], # Starting point 
+                    intersections[row + nextRowDirection][column]) # Ending point
+
+                firstRow = False
+
             addPath(columns_group, vertical_style, 'column'+str(column), pathData)
 
     # Generates a path between start and end with a single tab in a random direction
     # Uses self.randomJitter12-15 and self.randomBool9
-    def pathDataForLineWithOneTab(self, firstTile, startX, startY, endX, endY):
+    def pathDataForLineWithOneTab(self, firstTile, intersectionStart, intersectionEnd):
         jitter1 = self.randomJitter15
         jitter2 = self.randomJitter14
         jitter3 = self.randomJitter13
@@ -115,54 +146,54 @@ class JigsawPuzzle(inkex.Effect):
         if firstTile: # first tile needs a control point, others can just continue the previous one
             pathData = "C"
             # control point 1 - 20% along the line, with a jitter1 off the line
-            pathData += self.pointAlongLine(startX, startY, endX, endY, .2, direction * jitter1)
+            pathData += self.pointAlongLine(intersectionStart, intersectionEnd, .2, direction * jitter1)
             pathData += ","
         else:
             pathData = "S"
 
         # control point 2 - 50% + jitter2 + jitter4 along the line, -half tab size + jitter3 off the line 
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 + jitter2 + jitter4, direction * (-self.options.halfTabSizePct + jitter3))
         pathData += ","
         # Tab point 1 - 50% - half tab + jitter2 along the line, half tab + jitter3 off the line
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 - self.options.halfTabSizePct + jitter2, direction * (self.options.halfTabSizePct + jitter3))
         pathData += " "
 
         pathData += "C"
         # control point 3 - 50% - tab + jitter2 - jitter4 along the line, 1.5 * tab + jitter3 off the line
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 - 2.0 * self.options.halfTabSizePct + jitter2 - jitter4, direction * (3.0 * self.options.halfTabSizePct + jitter3))
         pathData += ","
         # control point 4 - 50% + tab + jitter2 - jitter4 along the line, 1.5 * tab + jitter3 off the line
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 + 2.0 * self.options.halfTabSizePct + jitter2 - jitter4, direction * (3.0 * self.options.halfTabSizePct + jitter3))
         pathData += ","
         # Tab point 2 - 50% + half tab + jitter2 along the line, half tab + jitter3 off the line
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 + self.options.halfTabSizePct + jitter2, direction * (self.options.halfTabSizePct + jitter3))
         pathData += " "
 
         pathData += "C"
         # control point 5 - 50% + jitter2 + jitter4 along the line, -half tab size + jitter3 off the line 
-        pathData += self.pointAlongLine(startX, startY, endX, endY, 
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, 
             .5 + jitter2 + jitter4, direction * (-self.options.halfTabSizePct + jitter3))
         pathData += ","
         # control point 6 - 80% along the line, with a jitterE (related to jitter1) off the line
-        pathData += self.pointAlongLine(startX, startY, endX, endY, .8, direction * (jitter1))
+        pathData += self.pointAlongLine(intersectionStart, intersectionEnd, .8, direction * (jitter1))
         pathData += ","
         # End point - 100% along the line
-        pathData += str(endX) + "," + str(endY) 
+        pathData += str(intersectionEnd.column) + "," + str(intersectionEnd.row) 
         pathData += " "
 
         return pathData
 
-    def pointAlongLine(self, startX, startY, endX, endY, percentAlong, percentOff):
+    def pointAlongLine(self, intersectionStart, intersectionEnd, percentAlong, percentOff):
         # return a point along and off the line provided
-        diffX = endX - startX
-        diffY = endY - startY
-        returnX = startX + diffX * percentAlong + diffY * percentOff
-        returnY = startY + diffY * percentAlong + diffX * percentOff
+        diffX = intersectionEnd.column - intersectionStart.column
+        diffY = intersectionEnd.row - intersectionStart.row
+        returnX = intersectionStart.column + diffX * percentAlong + diffY * percentOff
+        returnY = intersectionStart.row + diffY * percentAlong + diffX * percentOff
         return str(returnX) + "," + str(returnY)
 
     def generateRandomValues(self):
