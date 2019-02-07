@@ -6,7 +6,7 @@
   <dependency type="executable" location="extensions">inkex.py</dependency>
 
   <param name="random_seed"      type="int"     min="0"   max="9999"  _gui-text="Seed:">0</param>
-  <_param name="help_seed"       type="description">Seed of 0 will be random every run).</_param>
+  <_param name="help_seed"       type="description">Seed of 0 will be random every run.</_param>
   <param name="puzzle_width"     type="int"     min="50"  max="10000" _gui-text="Width:">300</param>
   <param name="puzzle_height"    type="int"     min="50"  max="10000" _gui-text="Height:">200</param>
   <_param name="help_size"       type="description">All measurements are in mm.</_param>
@@ -15,7 +15,7 @@
   <param name="tab_size"         type="float"   min="5"   max="40"    _gui-text="Size of tabs (%):">15.0</param>
   <param name="jitter"           type="float"   min="0"   max="13"    _gui-text="Randomness factor (%):">4.0</param>
   <param name="jitter_join"      type="int"     min="0"   max="5"     _gui-text="Randomness factor for intersections:">0</param>
-  <_param name="help_jitter_join" type="description">This is multiples of the Randomness factor.</_param>
+  <_param name="help_jitter_join" type="description">This is in multiples of the Randomness factor.</_param>
   <!-- <param name="debug"            type="boolean"                       _gui-text="Debug mode:">false</param> -->
 
   <effect>
