@@ -30,6 +30,8 @@ class JigsawPuzzle(inkex.Effect):
         self.OptionParser.add_option("--tiles_height", action="store", type="int", dest="tiles_height", default=10, help="Number of tiles high")
         self.OptionParser.add_option("--tab_size", action="store", type="float", dest="tab_size", default=15.0, help="Size of the tabs in %")
         self.OptionParser.add_option("--jitter", action="store", type="float", dest="jitter", default=4.0, help="Random factor (jitter)")
+        self.OptionParser.add_option("--jitter_join", action="store", type="int", dest="jitter_intersection", default=0, help="Randomness of intersections")
+        self.OptionParser.add_option("--debug", action="store", type="inkbool", dest="debugMode", default=False, help="Debug Mode")
 
     def effect(self):
 
@@ -74,13 +76,32 @@ class JigsawPuzzle(inkex.Effect):
         columnWidth = float(self.options.puzzle_width) / float(self.options.tiles_width)
         rowWidth = float(self.options.puzzle_height) / float(self.options.tiles_height)
 
+        if self.options.debugMode:
+            # Whatever debug output is needed to test things out
+            # self.generateRandomValues()
+            # start = Intersection(rowWidth/2.0, 0)
+            # end = Intersection(rowWidth, columnWidth)
+            
+            # pathData = "M" + str(start.column) + "," + str(start.row) + " "
+            # pathData += self.pathDataForLineWithOneTab(True, start, end)
+            # addPath(rows_group, horizontal_style, 'debug1', pathData)
+            return
+
         # Build array of intersection points
         intersections = list()
         for row in range(0, self.options.tiles_height + 1):
             intersections.append(list())
             for column in range(0, self.options.tiles_width + 1):
                 self.generateRandomValues()
-                intersections[row].append(Intersection(row * rowWidth, column * columnWidth))
+                # Positions are even columns, randomized a bit if they are not the ends of the paths
+                rowValue = row * rowWidth
+                if row > 0 and row < self.options.tiles_height:
+                    rowValue += self.randomJitter1 * float(self.options.jitter_intersection) * rowWidth
+                columnValue = column * columnWidth
+                if column > 0 and column < self.options.tiles_width:
+                    columnValue += self.randomJitter2 * float(self.options.jitter_intersection) * columnWidth
+
+                intersections[row].append(Intersection(rowValue, columnValue))
 
         # Horizontal Lines - go through each row and make connections between the column points
         for row in range(1, self.options.tiles_height):
@@ -193,7 +214,7 @@ class JigsawPuzzle(inkex.Effect):
         diffX = intersectionEnd.column - intersectionStart.column
         diffY = intersectionEnd.row - intersectionStart.row
         returnX = intersectionStart.column + diffX * percentAlong + diffY * percentOff
-        returnY = intersectionStart.row + diffY * percentAlong + diffX * percentOff
+        returnY = intersectionStart.row + diffY * percentAlong - diffX * percentOff
         return str(returnX) + "," + str(returnY)
 
     def generateRandomValues(self):

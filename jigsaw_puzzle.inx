@@ -14,6 +14,9 @@
   <param name="tiles_height"     type="int"     min="2"   max="100"   _gui-text="Tiles high:">10</param>
   <param name="tab_size"         type="float"   min="5"   max="40"    _gui-text="Size of tabs (%):">15.0</param>
   <param name="jitter"           type="float"   min="0"   max="13"    _gui-text="Randomness factor (%):">4.0</param>
+  <param name="jitter_join"      type="int"     min="0"   max="5"     _gui-text="Randomness factor for intersections:">0</param>
+  <_param name="help_jitter_join" type="description">This is multiples of the Randomness factor.</_param>
+  <!-- <param name="debug"            type="boolean"                       _gui-text="Debug mode:">false</param> -->
 
   <effect>
     <object-type>all</object-type>
