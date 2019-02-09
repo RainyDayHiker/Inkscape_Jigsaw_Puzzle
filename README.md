@@ -18,7 +18,7 @@ After restarting Inkscape, it can be run via Extensions > Render > Jigsaw Puzzle
 ![Options dialog](/images/Options.png?raw=true)
 
 Quick descriptions of the options:
-- Seed: if not 0, used as the seed of the random number generator so a puzzle with the same settings should result in the same design.  Hopefully this won't break with future updates.
+- Seed: if not 0, used as the seed of the random number generator so a puzzle with the same settings should result in the same design.  Potentially will break between versions during development.
 - Width/Height: size of puzzle in millimeters.
 - Tiles across/high: number of puzzle pieces.
 - Size of tabs (%): size of the tabs as a percentage of the tile size.

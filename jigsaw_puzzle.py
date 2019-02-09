@@ -67,12 +67,6 @@ class JigsawPuzzle(inkex.Effect):
         if self.options.random_seed > 0:
             random.seed(self.options.random_seed)
 
-        # Generate some values to use in initial setup
-        # Note: routine will call this regularly even if no random values are needed.  This ensures that when more options are added
-        #   that require random values, we won't add new calls and breaks seed values resulting in the same puzzle.  Still likely to
-        #   break seeds sometimes but this should hopefully minimize that
-        self.generateRandomValues()
-
         columnWidth = float(self.options.puzzle_width) / float(self.options.tiles_width)
         rowWidth = float(self.options.puzzle_height) / float(self.options.tiles_height)
 
@@ -92,20 +86,18 @@ class JigsawPuzzle(inkex.Effect):
         for row in range(0, self.options.tiles_height + 1):
             intersections.append(list())
             for column in range(0, self.options.tiles_width + 1):
-                self.generateRandomValues()
                 # Positions are even columns, randomized a bit if they are not the ends of the paths
                 rowValue = row * rowWidth
                 if row > 0 and row < self.options.tiles_height:
-                    rowValue += self.randomJitter1 * float(self.options.jitter_intersection) * rowWidth
+                    rowValue += self.randomJitter() * float(self.options.jitter_intersection) * rowWidth
                 columnValue = column * columnWidth
                 if column > 0 and column < self.options.tiles_width:
-                    columnValue += self.randomJitter2 * float(self.options.jitter_intersection) * columnWidth
+                    columnValue += self.randomJitter() * float(self.options.jitter_intersection) * columnWidth
 
                 intersections[row].append(Intersection(rowValue, columnValue))
 
         # Horizontal Lines - go through each row and make connections between the column points
         for row in range(1, self.options.tiles_height):
-            self.generateRandomValues()
             # Paths should alternate which side they start on, set up the column range appropriately
             columnRange = range(0, self.options.tiles_width)
             nextColumnDirection = 1
@@ -115,7 +107,6 @@ class JigsawPuzzle(inkex.Effect):
 
             firstColumn = True
             for column in columnRange:
-                self.generateRandomValues()
                 if firstColumn:
                     pathData = "M" + str(intersections[row][column].column) + "," + str(intersections[row][column].row) + " "
 
@@ -129,7 +120,6 @@ class JigsawPuzzle(inkex.Effect):
 
         # Vertical Lines - go through each column and make connections between the row points
         for column in range(1, self.options.tiles_width):
-            self.generateRandomValues()
             # Paths should alternate which side they start on, set up the row range appropriately
             rowRange = range(0, self.options.tiles_height)
             nextRowDirection = 1
@@ -139,7 +129,6 @@ class JigsawPuzzle(inkex.Effect):
 
             firstRow = True
             for row in rowRange:
-                self.generateRandomValues()
                 if firstRow:
                     pathData = "M" + str(intersections[row][column].column) + "," + str(intersections[row][column].row) + " "
 
@@ -152,14 +141,13 @@ class JigsawPuzzle(inkex.Effect):
             addPath(columns_group, vertical_style, 'column'+str(column), pathData)
 
     # Generates a path between start and end with a single tab in a random direction
-    # Uses self.randomJitter12-15 and self.randomBool9
     def pathDataForLineWithOneTab(self, firstTile, intersectionStart, intersectionEnd):
-        jitter1 = self.randomJitter15
-        jitter2 = self.randomJitter14
-        jitter3 = self.randomJitter13
-        jitter4 = self.randomJitter12
+        jitter1 = self.randomJitter()
+        jitter2 = self.randomJitter()
+        jitter3 = self.randomJitter()
+        jitter4 = self.randomJitter()
 
-        if self.randomBool9:
+        if randomBool():
             direction = -1
         else:
             direction = 1
@@ -216,35 +204,6 @@ class JigsawPuzzle(inkex.Effect):
         returnX = intersectionStart.column + diffX * percentAlong + diffY * percentOff
         returnY = intersectionStart.row + diffY * percentAlong - diffX * percentOff
         return str(returnX) + "," + str(returnY)
-
-    def generateRandomValues(self):
-        # Generate a set of random values to use in each section of path generation
-        # These are pregenerated these so that as things are tweaked new random values don't break a seed... hopefully
-        # In general, specific path generation will use the high numbers, core routines to build tiles will use the low numbers
-        self.randomJitter1 = self.randomJitter()
-        self.randomJitter2 = self.randomJitter()
-        self.randomJitter3 = self.randomJitter()
-        self.randomJitter4 = self.randomJitter()
-        self.randomJitter5 = self.randomJitter()
-        self.randomJitter6 = self.randomJitter()
-        self.randomJitter7 = self.randomJitter()
-        self.randomJitter8 = self.randomJitter()
-        self.randomJitter9 = self.randomJitter()
-        self.randomJitter10 = self.randomJitter()
-        self.randomJitter11 = self.randomJitter()
-        self.randomJitter12 = self.randomJitter()
-        self.randomJitter13 = self.randomJitter()
-        self.randomJitter14 = self.randomJitter()
-        self.randomJitter15 = self.randomJitter()
-        self.randomBool1 = randomBool()
-        self.randomBool2 = randomBool()
-        self.randomBool3 = randomBool()
-        self.randomBool4 = randomBool()
-        self.randomBool5 = randomBool()
-        self.randomBool6 = randomBool()
-        self.randomBool7 = randomBool()
-        self.randomBool8 = randomBool()
-        self.randomBool9 = randomBool()
 
     def randomJitter(self):
         return random.uniform(-self.options.jitterPct, self.options.jitterPct)
