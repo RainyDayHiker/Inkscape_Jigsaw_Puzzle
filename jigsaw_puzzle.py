@@ -123,7 +123,7 @@ class JigsawPuzzle(inkex.Effect):
             # Paths should alternate which side they start on, set up the row range appropriately
             rowRange = range(0, self.options.tiles_height)
             nextRowDirection = 1
-            if (row % 2) == 0:
+            if (column % 2) == 0:
                 rowRange = range(self.options.tiles_height, 0, -1)
                 nextRowDirection = -1
 
